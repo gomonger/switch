@@ -55,7 +55,8 @@ func RunTable() {
 	app = tview.NewApplication()
 
 	table := tview.NewTable().
-		SetBorders(true)
+		SetBorders(true).
+		SetFixed(1, 1)
 
 	// Add some rows and columns to the table.
 	for row := 0; row < len(data); row++ {
@@ -70,7 +71,8 @@ func RunTable() {
 			}
 			cell := tview.NewTableCell(fmt.Sprintf("%s", data[row][col])).
 				SetAlign(align).
-				SetTextColor(color)
+				SetTextColor(color).
+				SetSelectable(row != 0)
 
 			table.SetCell(row, col, cell)
 		}
@@ -79,7 +81,9 @@ func RunTable() {
 	table.SetBorder(true).SetTitle("Table Example").SetTitleAlign(tview.AlignLeft)
 	table.SetSelectable(true, false).SetSelectedFunc(func(row int, column int) {
 		app.Stop()
-		fmt.Printf("selected cell: row %d, column %d\n", row, column)
+		server := data[row][0]
+		env := data[row][1]
+		fmt.Printf("selected server: %s Env: %s\n", server, env)
 	})
 
 	if err := app.SetRoot(table, true).EnableMouse(true).Run(); err != nil {
