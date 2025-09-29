@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -81,16 +82,47 @@ func TableSetupFilter(table *tview.Table, term string, data [][]string) {
 
 }
 
-func RunTable() {
+func RunTable(inputDataFile string) {
 
-	data := [][]string{
-		{"Server Name", "Environment", "Appication"},
-		{"servera", "prod", "acme"},
-		{"serverb", "test", "acme"},
-		{"serverc", "dev", "acme"},
-		{"server001", "prod", "fudge"},
-		{"server002", "test", "fudge"},
-		{"server003", "dev", "fudge"},
+	var data [][]string
+
+	dataType := "servers"
+	selectFormat := "server: %-15s %-10s %-10s"
+
+	if inputDataFile != "" {
+
+		if strings.Contains(inputDataFile, "users") {
+			dataType = "users"
+			selectFormat = "user: %-6s,%-10s,%-10s"
+		}
+		fileData, err := os.ReadFile(inputDataFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error reading file: %v\n", err)
+			os.Exit(1)
+		}
+		lines := strings.Split(string(fileData), "\n")
+		for _, line := range lines {
+			if line == "" {
+				continue
+			}
+			parts := strings.Split(line, ",")
+			data = append(data, parts)
+		}
+
+	} else {
+
+		data = [][]string{
+			{"Server Name", "Environment", "Appication"},
+			{"servera", "prod", "acme"},
+			{"serverb", "test", "acme"},
+			{"serverc", "dev", "acme"},
+			{"server001", "prod", "fudge"},
+			{"server002", "test", "fudge"},
+			{"server003", "dev", "fudge"},
+			{"server004", "prod", "zbox"},
+			{"server005", "test", "zbox"},
+			{"server006", "dev", "zbox"},
+		}
 	}
 
 	app = tview.NewApplication()
@@ -118,19 +150,21 @@ func RunTable() {
 		TableSetupFilter(table, text, data)
 	})
 
-	searchBox.SetBorder(true).SetTitle("Search").SetTitleAlign(tview.AlignLeft)
+	searchBox.SetBorder(true).SetTitle("Switch").SetTitleAlign(tview.AlignLeft)
 
 	TableSetupFilter(table, "", data)
 
-	table.SetBorder(true).SetTitle("Table Example").SetTitleAlign(tview.AlignLeft)
+	table.SetBorder(true).SetTitle(dataType).SetTitleAlign(tview.AlignLeft)
 	table.SetSelectable(true, false).SetSelectedFunc(func(row int, column int) {
 		app.Stop()
-		server := data[row][0]
-		env := data[row][1]
-		fmt.Printf("selected server: %s Env: %s\n", server, env)
+
+		cell0 := table.GetCell(row, 0).Text
+		cell1 := table.GetCell(row, 1).Text
+		cell2 := table.GetCell(row, 2).Text
+		fmt.Printf(selectFormat, cell0, cell1, cell2)
 	})
 
-	flex.AddItem(searchBox, 0, 1, false)
+	flex.AddItem(searchBox, 5, 1, false)
 	flex.AddItem(table, 0, 1, true)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -153,12 +187,14 @@ func RunTable() {
 
 func main() {
 	var tableMode bool
+	var tableDataFile string
 	flag.BoolVar(&tableMode, "t", false, "table mode")
+	flag.StringVar(&tableDataFile, "f", "", "table data file")
 	flag.String("h", "", "help")
 	flag.Parse()
 
 	if tableMode {
-		RunTable()
+		RunTable(tableDataFile)
 		return
 	}
 	RunList()

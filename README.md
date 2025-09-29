@@ -10,3 +10,7 @@ Run in table mode
 ```bash
 go run ./main.go -t=true
 ```
+
+```bash
+go run ./main.go -t=true -f users.csv
+```
